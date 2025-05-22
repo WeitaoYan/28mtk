@@ -64,7 +64,9 @@ function getCellByLocation(row, col, arr2D) {
     }
 }
 
-function convertTo2D(arr, rows, colsPerRow) {
+function convertTo2D(arr) {
+    let rows = 16;
+    let colsPerRow = 30;
     const result = [];
     for (let i = 0; i < rows; i++) {
         const start = i * colsPerRow;
@@ -75,14 +77,9 @@ function convertTo2D(arr, rows, colsPerRow) {
 }
 
 function countUnknown(cells) {
-    let count = 0;
-    for (let cell of cells) {
-        if (cell.getState() === "unknown") {
-            count++;
-        }
-    }
-    return count;
+    return cells.filter(cell => cell.getState() === "unknown").length;
 }
+
 // 这里一定是安全区
 function handleNumberCell(node, cell, cell2D) {
     let num = Number(node.innerText)
@@ -96,7 +93,6 @@ function handleNumberCell(node, cell, cell2D) {
 
 //这里一定是树的cell
 function handleImageCell(node, cell, cell2D) {
-    cell.getState();
     clearCellTree(cell);
     // 找出所有树的相邻格子中有数字的
     let neighbors = getNeighbor(cell, cell2D);
@@ -110,11 +106,12 @@ function handleImageCell(node, cell, cell2D) {
         if (treeCount == numberCell.getState()) {
             unknownCells.forEach(c => c.click());
         } else if (treeCount + unknownCount == numberCell.getState()) {
-            unknownCells.forEach(c => c.click());
+            unknownCells.forEach(c => markTree(c));
         }
     }
     );
 }
+
 function start() {
     let cells = getCells();
     clearTree(cells);
@@ -198,14 +195,16 @@ function simulateRightClick(element) {
 }
 
 function markTree(cell) {
-    // simulateRightClick(cell.element);
-    let tree = cell.element.querySelector("span");
-    if (tree) {
-        return
-    }
-    var span = document.createElement('span');
-    span.innerHTML = '🌲';
-    cell.element.appendChild(span);
+    // TODO
+    //simulateRightClick(cell.element);
+    return
+    // let tree = cell.element.querySelector("span");
+    // if (tree) {
+    //     return
+    // }
+    // var span = document.createElement('span');
+    // span.innerHTML = '🌲';
+    // cell.element.appendChild(span);
 
 }
 
@@ -226,5 +225,57 @@ function clearCellTree(cell) {
     }
 }
 
-"#__nuxt>div>div:nth-child(4)>div>div:nth-child(3)>div>div.absolute>div>div"
-start()
+function searchAndMarkTree() {
+    let cells = getCells();
+    let cell2D = convertTo2D(cells)
+    let numCells = cells.filter( (cell) => typeof cell.getState() === "number");
+    let ensureCells = numCells.filter(cell => {
+        let neighbors = getNeighbor(cell, cell2D);
+        let unknownCells = neighbors.filter(cell => cell.getState() === "unknown");
+        let treeCells = neighbors.filter(cell => cell.getState() === "tree");
+        let num = cell.getState();
+        if (num != 0) {
+            return unknownCells.length + treeCells.length == num;
+        }
+    }
+    );
+    ensureCells.forEach( (ensureCell) => {
+        let neighbors = getNeighbor(ensureCell, cell2D);
+        let unknownCells = neighbors.filter(cell => cell.getState() === "unknown");
+        unknownCells.forEach(cell => simulateRightClick(cell.element));
+    }
+    );
+}
+function addButton(){
+    // 创建按钮元素
+    var button = document.createElement('button');
+    button.textContent = '搜索并标记树';
+    button.style.position = 'fixed';
+    button.style.right = '200px';
+    button.style.bottom = '200px';
+    button.id = 'searchAndMarkBtn';
+    button.style.padding = '8px 16px';
+    button.style.margin = '10px';
+    button.style.backgroundColor = '#4CAF50';
+    button.style.color = 'white';
+    button.style.border = 'none';
+    button.style.borderRadius = '4px';
+    button.style.cursor = 'pointer';
+    button.onmouseover = function() { this.style.opacity = '0.8'; };
+    button.onmouseout = function() { this.style.opacity = '1'; };
+
+    // 添加点击事件监听器
+    button.addEventListener('click', function() {
+        if (typeof searchAndMarkTree === 'function') {
+            searchAndMarkTree();
+        } else {
+            console.error('searchAndMarkTree 函数未定义');
+        }
+    });
+    
+    // 将按钮添加到页面中（这里添加到 body 的末尾）
+    document.body.appendChild(button);
+}
+/// "#__nuxt>div>div:nth-child(4)>div>div:nth-child(3)>div>div.absolute>div>div"
+start();
+addButton();
